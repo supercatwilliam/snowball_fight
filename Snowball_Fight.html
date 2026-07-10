@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snowball Fight</title>
+  <style>
+:root {
+  --bg-top: #8fd3ff;
+  --bg-bottom: #eef7ff;
+  --snow: #f8fbff;
+  --host: #3d7eff;
+  --top-player: #a84dff;
+  --bottom-player: #1f84ff;
+  --health-good: #6fdd91;
+  --health-low: #f77;
+  --panel: rgba(255, 255, 255, 0.9);
+  --shadow: rgba(0, 0, 0, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: Inter, system-ui, sans-serif;
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 55%, #edf7ff 100%);
+  color: #114059;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+}
+
+.game-shell {
+  width: min(1120px, 100%);
+  max-width: 1120px;
+  position: relative;
+}
+
+.top-bar, .bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.player-label {
+  font-size: 0.8rem;
+  color: #5a7d93;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.player-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.health-bar {
+  width: 210px;
+  height: 16px;
+  border-radius: 999px;
+  background: #dcebf6;
+  overflow: hidden;
+}
+
+.health-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--health-good), #55c275);
+  transition: width 0.2s ease;
+}
+
+.health-value {
+  min-width: 40px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.player-snowball {
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: #eef5ff;
+  border: 1px solid rgba(17, 64, 89, 0.1);
+  font-size: 0.9rem;
+}
+
+.scoreboard {
+  text-align: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.scoreboard div:first-child {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.score-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-size: 0.95rem;
+}
+
+.arena {
+  position: relative;
+  width: 100%;
+  min-height: 640px;
+  background: linear-gradient(180deg, #d9f0ff 0%, #f7fcff 100%);
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(8, 44, 84, 0.14);
+}
+
+.winter-sky {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(255, 255, 255, 0.9) 0%, transparent 25%),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.55) 0%, transparent 14%),
+    radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.6) 0%, transparent 12%);
+  pointer-events: none;
+}
+
+.snowbank {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: radial-gradient(circle at 50% 0%, #ffffff, #d7eefc 65%);
+  z-index: 1;
+}
+
+.snowbank-top {
+  top: 0;
+  border-bottom-left-radius: 80px;
+  border-bottom-right-radius: 80px;
+}
+
+.snowbank-bottom {
+  bottom: 0;
+  border-top-left-radius: 80px;
+  border-top-right-radius: 80px;
+}
+
+.player {
+  position: absolute;
+  width: 84px;
+  height: 110px;
+  border-radius: 32px;
+  background: linear-gradient(180deg, #fff 0%, #e6f4ff 70%);
+  border: 4px solid #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 3;
+}
+
+.player-top {
+  top: 72px;
+  left: calc(50% - 42px);
+}
+
+.player-bottom {
+  bottom: 72px;
+  left: calc(50% - 42px);
+}
+
+.player::before,
+.player::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.player::before {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  top: -26px;
+  background: linear-gradient(180deg, #fff 0%, #c4e0ff 100%);
+  border: 4px solid #fff;
+}
+
+.player::after {
+  width: 76px;
+  height: 34px;
+  bottom: 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(205, 230, 255, 0.95));
+}
+
+.player-top {
+  background-color: var(--top-player);
+  background-image: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.35), transparent 28%);
+}
+
+.player-bottom {
+  background-color: var(--bottom-player);
+  background-image: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.4), transparent 28%);
+}
+
+.snowball-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.snowball {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset -4px -4px 12px rgba(255, 255, 255, 0.75);
+}
+
+.snowball.level-1 {
+  width: 22px;
+  height: 22px;
+  background: linear-gradient(145deg, #ffffff, #e7f4ff);
+  border: 2px solid #d7f0ff;
+}
+
+.snowball.level-2 {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(145deg, #daf3ff, #7ed4ff);
+  border: 2px solid #4fb8ff;
+  box-shadow: inset -4px -4px 12px rgba(255, 255, 255, 0.73), 0 0 8px rgba(79, 184, 255, 0.32);
+}
+
+.snowball.level-3 {
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(145deg, #ffdceb, #ef8fc5);
+  border: 2px solid #e36db2;
+  box-shadow: inset -4px -4px 12px rgba(255, 255, 255, 0.72), 0 0 10px rgba(227, 109, 178, 0.28);
+}
+
+.snowball.level-4 {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(145deg, #ffe1b7, #ffb14d);
+  border: 2px solid #ff8c19;
+  box-shadow: inset -4px -4px 12px rgba(255, 255, 255, 0.7), 0 0 12px rgba(255, 140, 25, 0.3);
+}
+
+.snowball.level-5 {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(145deg, #ffb4b4, #ff2d2d);
+  border: 2px solid #c50000;
+  box-shadow: inset -6px -6px 14px rgba(255, 255, 255, 0.78), 0 0 16px rgba(255, 45, 45, 0.35);
+}
+
+.touch-panel {
+  position: absolute;
+  width: 158px;
+  padding: 14px 12px;
+  display: grid;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 18px 28px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(10px);
+  color: #114059;
+  z-index: 4;
+}
+
+.touch-panel.hidden {
+  display: none !important;
+}
+
+.touch-grid {
+  display: grid;
+  grid-template-columns: 40px 40px 40px;
+  grid-template-rows: 40px 40px 40px;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+}
+
+.touch-control-button {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: rgba(17, 64, 89, 0.14);
+  color: #103248;
+  font-size: 1.05rem;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+
+.touch-control-button.touch-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.touch-control-button.touch-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.touch-control-button.touch-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.touch-control-button.touch-down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.touch-panel-left {
+  left: 16px;
+  top: 23%;
+}
+
+.touch-panel-right {
+  right: 16px;
+  top: 23%;
+}
+
+.touch-panel-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.touch-control-button {
+  padding: 14px 0;
+  border: none;
+  border-radius: 18px;
+  background: rgba(17, 64, 89, 0.14);
+  color: #103248;
+  font-size: 1.05rem;
+  font-weight: 700;
+  touch-action: manipulation;
+}
+
+.touch-control-button:active {
+  background: rgba(17, 64, 89, 0.24);
+  transform: translateY(1px);
+}
+
+.overlay {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 31, 64, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.host-card, .question-card {
+  width: min(540px, calc(100% - 40px));
+  padding: 28px 30px;
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 28px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
+  text-align: center;
+}
+
+.host-title, .question-title {
+  font-size: 1.8rem;
+  margin-bottom: 14px;
+}
+
+.host-text, .question-text, .host-note {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #164059;
+}
+
+.name-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.name-row label {
+  flex: 1 1 220px;
+  text-align: left;
+}
+
+.name-row input {
+  margin-top: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #cbdbea;
+  border-radius: 16px;
+  font-size: 1rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3f88ff, #1d4dff);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(17, 64, 89, 0.18);
+}
+
+.question-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.question-option {
+  padding: 14px 16px;
+  background: #f1f8ff;
+  border: 1px solid #c6def7;
+  border-radius: 18px;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.question-answer-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.question-answer-group {
+  flex: 1;
+  display: grid;
+  gap: 12px;
+}
+
+.question-answer-label {
+  color: #315f82;
+  font-weight: 700;
+  text-align: center;
+}
+
+.answer-button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.answer-button {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 16px;
+  background: #eaf5ff;
+  color: #103248;
+  font-weight: 700;
+  transition: background 0.2s ease;
+}
+
+.answer-button:hover,
+.answer-button:active {
+  background: #c6e3ff;
+}
+
+.question-option strong {
+  display: inline-block;
+  width: 18px;
+}
+
+.question-timer {
+  margin-top: 16px;
+  font-weight: 700;
+}
+
+.control-hint {
+  font-size: 0.95rem;
+  color: #315f82;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .top-bar, .bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scoreboard {
+    order: -1;
+  }
+
+  .arena {
+    min-height: 520px;
+  }
+}
+
+
+.school-logo{
+  position:absolute;
+  top:12px;
+  right:16px;
+  z-index:5;
+  background:rgba(255,255,255,0.75);
+  padding:6px 10px;
+  border-radius:14px;
+}
+.school-logo img{
+  height:42px;
+  display:block;
+}
+
+
+.author-badge{
+  position:absolute;
+  right:18px;
+  bottom:18px;
+  z-index:5;
+  background:rgba(255,255,255,0.88);
+  padding:8px 14px;
+  border-radius:16px;
+  font-weight:700;
+  color:#114059;
+  box-shadow:0 4px 12px rgba(0,0,0,0.12);
+  border:2px solid rgba(61,126,255,0.18);
+}
+.author-badge .small{
+  display:block;
+  font-size:0.78rem;
+  color:#4a6a80;
+  font-weight:600;
+}
+
+</style>
+</head>
+<body>
+  <div class="game-shell">
+    <header class="top-bar">
+      <div class="player-info player-top-info">
+        <div class="player-label">Player 1</div>
+        <div class="player-name" id="topPlayerName">Upper</div>
+        <div class="health-bar">
+          <div class="health-fill" id="topHealthFill"></div>
+        </div>
+        <div class="health-value" id="topHealthValue">100</div>
+        <div class="player-snowball" id="topSnowballLabel">Snowball 1</div>
+      </div>
+      <button id="fullscreenButton" type="button">Fullscreen</button>
+      <button id="touchToggleButton" type="button">Show Touch Controls</button>
+    </header>
+
+    <main class="arena" id="arena">
+      
+      <div class="author-badge">
+        William
+        <span class="small">from 4V</span>
+      </div>
+
+      <div class="snowbank snowbank-top"></div>
+      <div class="snowbank snowbank-bottom"></div>
+      <div class="player player-top" id="playerTop"></div>
+      <div class="player player-bottom" id="playerBottom"></div>
+      <div class="snowball-layer" id="snowballLayer"></div>
+      <div class="touch-panel touch-panel-left hidden" id="touchPanelLeft">
+        <div class="touch-panel-label">Top Player</div>
+        <div class="touch-grid">
+          <button class="touch-control-button touch-up" data-player="top" data-action="switch">W</button>
+          <button class="touch-control-button touch-left" data-player="top" data-action="move-left">A</button>
+          <button class="touch-control-button touch-right" data-player="top" data-action="move-right">D</button>
+          <button class="touch-control-button touch-down" data-player="top" data-action="throw">S</button>
+        </div>
+      </div>
+      <div class="touch-panel touch-panel-right hidden" id="touchPanelRight">
+        <div class="touch-panel-label">Bottom Player</div>
+        <div class="touch-grid">
+          <button class="touch-control-button touch-up" data-player="bottom" data-action="throw">↑</button>
+          <button class="touch-control-button touch-left" data-player="bottom" data-action="move-left">←</button>
+          <button class="touch-control-button touch-right" data-player="bottom" data-action="move-right">→</button>
+          <button class="touch-control-button touch-down" data-player="bottom" data-action="switch">↓</button>
+        </div>
+      </div>
+      
+      <div class="school-logo">
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAABSCAYAAADuIulwAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAgAElEQVR4nO2dfXhdVZ3vPz3GGEMmkxszNeSpnVjDvh2mN1asnUoREREYBAUEHOVF3CiIHMU+jJdheHh4etFxOgio3QoiHsSCyKtQkcEOYKdSptbeTm+sndw9nU6sMXZijJkYMzH3cHr/+K7Vvc8+e5+ck5f2pOzv8+znJPucvfdaa6/1W7/3H6RIkSJFihQpUqRIkSJFihQpUqRIkSJFihQpUqRIkSJFihQpUqRIkSJFihQpUqRIkSJFihS1hAVHugEpqoPjegB1MV8V/Fy2MM37NZojjHE/lx2vuoFTP68JaDgcz5qvMO8EP5c9wi2pPWSOdANmA47rZRzXa3dcr+1It+UwYCHw98BPI8dZ07xfBrgB+FXkuHHGLY3H2phn/eUcPWvewXG9FuA9HCVrc7YRt1PPGziulwG6gauBFcCE43oPADk/l504oo2bO9QBnUBX5Hzz4W9KitmC43r1wHLgJmAZ8DRQNcd8tGNeEyzgNOBeoCN0biUwBnzziLQoRYoqYDbdpcAngA+ijWf4iDaqhjFv2U7H9bqBdRQTKxARvsJxvaieJEWKWsQi4BHgSlIueUrMZw7rOsRCx6HNHP2HrznzGj+o8Nxs4B+AqIJ9yxw9az6gAVjCPGYeDifmJcFyXG8RcNGRbsdRggLwvDkOB54xR4oUVWNeEizgVEpN42HkgaNV6T4XyFA6F/JGvxLd+QtAvpzJPeR6Eb02b87FnS+Ya2PbEnbZcFyvAzgeWUyHgB5gsFK3Dsf16pBiuwu5cxww9zjg57JJ7U/st+N6jUg1YY+MadcQsB8Yil4X6md9TBMzQL35TUn/I/epRzqwhUA7MAkMAnv8XHZwinEoO9bm+8VorFqAPqDXz2WHyt038ow6074uJPKOAQPAbmCsWteNOSdYpsFtfi57YBZve9wU3+8hVVxWigzwP5GIHcYdaLHdSvE82QlcQXlx+2Tg62iSW+wHzgGuAj4e+f064PPm71OAr0auvcVxPQ8ZVK4AzkcbVgYRkkmgz3G9rwP3+7nsSFyjjMvABciq3EVALApITH3Ycb070cJ8yDzPwgf+HBg196pDotyHkLK8lWLCX0CEeBLY6LjeY8Czfi47ab7/CPBZ8/vo5tsM/JzASrgGuD/UjzrAMX25EBGVMIHNI4v5i8DXkMg9GkMcLgLWh/4fB65zXG8jsAq43nzasc4Dk47r9ZrrNsb5zxmCvxA4FxkTFqOxtu8rb8bxUcf1NgA7K91sDofcnAE+4bjeqaEdY6ZomeL7h6bjRPkyxjEEej97HIPExLrI+ZMQd1MOZyCCEL5uN9pZm2KeFXZarUeLP/x9E3A2sAEt9FZzTYP5bEH6zNuAtYbjKYLx0fscWmgnIKLQELpHG/Ax4AFzr+ZIG1ooXi+nIWX5XyM3k2bTzvA97T1cRAA/YjgizG/sfaPIRMbgEBdmiMH5wGPAzYj7aQ6NR0NojN9jxuzWhOfUU/ouGpAB4EHk2xce6ybz/4loU/lYqD9hLETW+y+G2tdgnmfv0wF80ozh2ZXShjknWGZH+T5q2DrH9RZbT94Z4N8SzheAR5mGPsY4nzpxk/1ljAHg25FzjcClSReY8bsscnoM+PoMPLffjTi2qO9ZFPXA5WgBhNvUANyJFmI5VYL169uAOJhYOK53vGlPd8zXE8SrI5oQQY1ylxXD9GMtcB8SsypZvy2o3086rrdkirWXQRxwnPU9imbkM1a0eTmu1wU8iYhdJZb6TjTel1fw28NmmdgBbAc+hXaaSxzXa54Bx7UJsZVR7EW76GilNzKEqhlNpE+TWmsOwRCYJ4GoiHWK43rt0d+bxXAK0qWEsR3onUFTTkS7/wSwGXEWX0LvO8pJNwPvxywW06ZzzRF9t8PA4+Z+dwP7zP06EZdQAiOOXU1xH/Noo7wUeC9wHlr42yPtawCuMeFJeSSCJYUkjYeOvOnHyUCWUkJg9VabESc7Qem4nAjcEnNtGA2Ig24093gcEaVvIpE+ihbgYvuPWc83ICfuaF+eBT4D3I5UNuH2NQM3OK63uEzbgMO0OI2cewOatKvQDvFDxCJ3Vctx+bnsHjT4Vvk3jixPF/q57M5KdnLH9eoc11uOwkJ+jPQE9yFuIEWAHZS6HSwEzo15b41oAod1XpNIfCmrAK4AQ8AHgHf6uez/8nPZa4HVxFscVxCIUQuBayjV1+4GzvFz2feZ+10FvA34xhTtaEOcVXjt7AMu9nPZ+/1cdpOfyz7j57J3I+L1PFqcw0j/txtxivcAx5pnRjmyEeB15vtjgW8hjmcdEsnC2I/0aK/zc9l3AP8DeDMiNmGiUId0bedO0T8QQTkDrafP+Lnsh9BY+zG/PTHEeCxH3HV4rIeBa4Ez/Fz2Jj+XvQ54O5CLtG8JUh2V1asfTithD5o4tyCi1Y1k3D5gi+N6D2EsB8BEBTqoz6PwheVop91NQMCKYBZWPYFe4UwkZnQjx71J07ZtQJ3huBqQFaNibu0oxQjwHaRDshOzHngXEhfD3FcXerdhDANPzDCQN484oKfC88LPZQcd17uN0jjKVoK57VAqSo6hxb8tfNLPZQcc17sB6aeSdnurM4s+71TH9Xah8Zgw/T2AYjIXmr+HzPejph+TjuvFbZAF85s8FHGu0X4MIangUTsu5rl7HNdbY9p5WuSaKxzXe7aMpa+ApJQXImtwAPgyEmvDdKMRaHRcbxxxmOHvrIrmW5H3NuS43s1oHS4ypzOmjx3Ec3PAYSRYpsFbHNd7L1K2XYUat9QcVyLitR34keN6Ptq5+uIsEebcDnMUwVD8VjQY7WjSHoesPt0Us8UjiO21VpgrEcvvAJsc17vKz2UHZtL3+Qxj5n8UTeKwGHQK2hV3xpwL44lZGL9h4Dm7gCOwYmGY42lCC2kYEYtoULwPPJ6wKQ4ifddniZdAhtGCCuuv2lBA+j7EjW51XG87ci3YXr5rFaERiZlNkfNPI0tdXD/6kaV3BcUEdhlaby8kPGsIeD56Tz+XLTiu14+4wXA76s39myh15J4AnkxYvwOO6z2DjCjhttUGwbLwc9kRx/X+FngC6Q5OJRjQTnOcj3bBUWDMcb0hROH7gd8m3PoY1NkWRKgaQ0cz8X0dQBzfN8z/H0E7r30hZwKXOa73dy9nq6Ofy445rvctpIO0i7gVcV074ZA/0MWRS0eQsWWmmCBZLzlpvotyPfYdWpN/GL1J6WwMgd6D1AxRAoF51o8RVxclaEvM8Rdo4e91XO85pHPtQ75iCd0oi3riFfxPJgX5m368gAhweGwWIk4tiWANE68fBvU9jmBZ62SUKy0g7iuu7fZ+YTQgRmFbzG+BI+Q4aiyHPY7rXYpY1puQqdlOgDo0yFO5L8wEuxA7vdnPZfPG8nMdxS+jDukDGkl1W99BOpAwl3We43pfMGLzCkrdHbahcZ4pyhGsPFpkSXMlzmevb4rnDZvnlRAsw2l8BemeouKWRQPaNBchrvNGJDnc4bjepmnk/qonEJ3CKGvI8HPZUcf1Bim2eGYoNYqEMUQywRoj2SHbuiuE0UT1G9Ybyn15RC1ifi477ueyG5E+6SrE3icN1mxhCLgLeB9y5LPPO5tScSZFgJ3Ai5FznchiWI8cGMMuIQU0WWfDgXecUktl+DnlNpPpbHoFyqR2Mfqfq5H17EC53xo0IAvfBuCr03CdiXMuzZM8JmHE6ar+sMzvhxHXGofxMt/VE++1Xy3iuNpDqAkTvgkhuAd5Qt9Osql3JigADyOLyif8XHZfhD1/K/FhKPvnqD3zCoYreDByuhlZfBYhs3l4/GZD2W4xSfl3UI5gxEVYxHErYVidTCL8XHYv8FFkufw8lW22TUhcvKRKl55JSgm/dehNhFHWx3FTvy5z2SjTy8M1TunGkUcWx91VHOXaVjuxhGZi9zqudyPaia5DXM9MsoiOIoLzDNrtdwGTCYsobiceA777ctZfRfAMUlhbESMDnA78HyTSh/EtZjc8arrvIM7J2HFcrz4UJhN8oUVu497Kws9lJx3X24z0QWsJRMC3EcTPRedVHeLuHyfBqk18rOUApWthGbK+J6GNUn+yPOXDqqY7zqNIXxbeDMaQXjPOHSIJZYl+zRAsCyOi7XZc7xpEZK5DivlqMIkWzCNo5/Mr2On3ockWxiZKxaAihHyRlgLNs2QVqlWMIy71rwkW1VIkzkd9b75bIznJB9B8CIsrXch/aHNMGxsQFx7LAZn3nQn91kHK9AG0MH3H9XKIs1kOfJhSp9VFyGhhCVaUSNRHfj+BOJWo8vo8x/WeKBPPdyqlRG4ArYnZxiilG1Q9MoTtign+Bo3BGKHg96lQEyJhHIx+62kUcHpXlZfXoZfbQuXK8nsJlLF5RPDWxO3CFsZfy+ombmN2FMw1C8Npfodis3MdEgfDeBEpmWsBOyl9L23I0LM0fNJxvYWIU4pyi2FchlwY/h34T+CfgS+GRTw/l837uWy/n8s+hQw7UYIySaALysd8H9VXTaBxj87l05HzdRzjcTwKXo5yitsQ8ZttDFPq2d+IxOY46aUN1SL4DfAjFMP5l5Q3CNQehxWFYbsrUS6GkUGT7qvIkrLJcb0n0YuaJD5dx3akj1iFFuQW61wX2lWtYrETcWPnoUk/BHy0HHE7DLjUcb23VHnNPwIbq7xmNxqrzjK/eYwqwqPmGP2oPSsj508B7nVc7xHUp04kqp08xf3GzG/CROV04AKT5WCSwC+sHs2n6DrbRzF3FbW8ZZAj6jbEjY2iTWAvxb5ONp6v0XG9+83vMqavN1HqFzUJ3DkXFYqM9fTrKHQoTCRPRxkgbiMguM2ImC407V1hDgc5miai5gnWNDGKdpJVBIPxV4h47QB++idXrO9rbZgY+c3vXzWcL2QG0cTpJxiwJSaQsx2xrq9Hu1Y3xRki9wJX+blsou/IYcKZ5qgGGaokWGYD+RpKbRLHoQ8gp8wqmzI3MAvpHrTThz3FM2h+RD3zQRxPUq6qLUiXFw5xaUZhXZuArWj+NSNDzukUE7dJ4Dt+LjsW+n+EUkOAjeFcCNzg57J/67je9YgTCYt5NgvFWkQIW4mPg5wAvkCy/9WM4eey+4w4/EmCudGIVAhnI6JrCf5KiufPJHLY7Sv3jKOSYNVlCuOn/XHfQ8f9t9/0bxvo+OBPhv6oYSJfl0EE53iAlw4uGBueaJh46eACG2AaF0SbIUgZEp28eTR5b/Zz2bJ6rqMQO80RDXK1ltha81kbRrGidzB1xoch4Cso1Uzcwh9CcbFLkNI7rM96jzminvcWeRRDF+YiRtAmuizy2/rQ819nPjcj4nQ9pW2zifziMIFcMG5l7t2G1qM1dnroXAZxe0kpzSdR+x6eaqOrWR3WTND8qt+3vn/pv3zimjf97667Tv/+9g8v+8mu1x7zu2h4SNNLBxe0Ie/cpQTEzB6LkMKwmVJiNYSyBXzAz2XnbMeqYYygrBtREXgQeV/XlFXVLIKnUPK/F0hetC+ieLjnKN3AChgLs5/L9iLr1+MJ94pbV5Noztwc9k4PuYuUS3C5yPx2EnFJH0YSRCXj3I8iStb4uezwXHO+fi67D43z41TmDjSO3EI+HeI6E3FUclgjEw37N/x02Uff2vGLvmNeOcn5zv+t237g2Mb/+N0x56OX7VBl3+syBQ5C/0uFzCa0i/QmhUXMMfJI5zIbOqKfm89fUBwTaM/FwohZTwPvpHin30lMbGfMM6PPCm8mo8hUH9aD9JK8OPMJ3xe9GxOqsgXpHU9EPn+daDPqQ8UxNqHN6GTiXQvC99yNxMw7kVVxBUHivjrz23HzuQMR+BcS9EfPI/2p5dxs323amB+H+lEwMXg7kBXwQsSd2SR7Vic2hFK6bEBW8jj9qs0gEUYfyWM9Yfod1invp3Tj6kfr7GQ0NsuQpGI3fjsum5Eo3VOpXq3mS9UbC8gXqS7x2R6UzqLE38RxPQftopeRHJF/CH9QP8mqjgHe/NpfsqztV5v+tG1o/avr8pszq3tqTexJEQNrvauG63Nc72ykKwoTzRf9XHZ1mWe0UJxBdYQgQ8NEJZyNmeuLEUeVQcR7L/HpjcPPXmSe20oQqrSvEo5lrmEMVjbXfTMihoNoXKqOrZwPBKsJWfs+WMVlPShvUlK6GTsxvsYUPl7L2n7F7e94jtf9wW9ZsOCgzf09iBSv38VklMis7jmSFsIUCXBcbynighoQN7Af+BniFF6Mch5mgX0cbZJhLvweP5f96OFoc4pkHJUiITBeJt8PJtj5AJXVLczXv+KlzIIFBzMESvgmNKk/gnbAbYWt3f8EPJNZ3TPjWoiFrd0tiKD2ZFaXc2ROUQFGCNwLwhbBIeAdiHCF0U58wr9/nqsGpqgch4VgmQVYZ45oxkQLy8qCZOKxzOqeAtoZp8ovHcWs+QDt+XXb9o17j1tz5Rt3LUUZJI9Hegbrk2WV9JcD+cLWbh/J5j9GxGwIiQajScSnsLXbFhyoQ8SwjqPcCfUwYhARpahzaxvwmON6TyCOqxH4E2TdiroY7Ef6rRRHGDMmWIWt3fY+GURcliJlZhfwxwSVQaomWIWt3SP/NvLw6Mc2ndn1899WVcV71io+Fw4uGLp9x0r/Yx//5vbC1u5HUd+WoYybZxNkt7SOgsvMEZbVDwAjha3d/RSb/G2pqDwq1LEdLa525KeyhenHdqXgkJL6TuQ3FXUFcFCJs3KwJvfEpHIpDh+mTbAKW7ttttDjgT9DC2zJTO4Zh4ZXvDSdyyohWJVybofinDKre8aRQn8P8HBha7dNrHYa8CYkxnUQKF7bzRH1sZlEuq89SA/2KLKaOCjjaSPgGQ4zxcyxC5naK/HDCmMUJXf87BGOYkhhUDFxKWztttzRCciUegLB4iwq4Gg+wweIy7AcVDhtrS0+aT/DB7/Lv5LB8WOq6tR5x/lLP7e1+zTErRyqPBIRySxHNBUmSfDbMYr2HcCOwtbuRjQ+rQT16OLSmIwiM/4IGo82RKTehgjVI0Aus7qnrFhrlMO2wGU52NxOeaAwHT8cY6SwY1VJvv2agnFp2ISq6VyNNhibhdYe4cKnk4jI3YnSBVflvmIsd7aGgJ3bdi1MUKHVsIrn1ROs5Xnxfqbb5ooIVmFr9yrkt3IRwQ41ghaebz4PAL80nzad8ehUSmiz0NvRBLLltjtQtZBF//Lrtu7fv/SKanZFzn7D3otMW0eQj8424GdGv9QPDPzZ/b/P/OfvX1WJ4+xgJT4ihvsaJ8LdFbZ22/zyHYgD60Tc2HKCcuvjyNHuhszqnkrLYbUgj+dyRU3zBKmmfwlsdlxv5zT8x05Fiug8ckKMKqprHoZD2gl81FieOwg2zoWIkOxH87efaZRRd4KKx+9BPmorzP+N6B30mzZ833G9Z/yECtXTwEdQlZsDKBf9fBBfz0XOtwU0tyrK+1+WYBW2djcjf6W3oUW1AQ1GL3oB1gFsDBifjghjFvq+mGdngKbbfvyWW1BsUmX3W3CQjqZDaqIWAutQARGwMWDssfc+nr/ou+cuHv6vV5e937HHjNX3bu1up5jLCu8O4f8tYVoEvAYRJ4fAsthEcX75UeQ0uN58VmMsaECK5KmCdS2sTq3Xcb2bgG0JRR3i0In0dXlk7p/XMP5JPtXlaSoLw1WtQuEvJxDED1rOrQXNj24Uh/miiQ3smQWO6I2ISPrMn/fjoDkF2ngrwlQc1iTwzczqnhmXaq4WhviNOu6VSfFRsXjNq/+Lxrr/F3tLApGNzIKDU8pSdZkCl/zpTy9C+rmwsryV4oyUdhetFBPIj+tBYGNmdc9MPebzqIJKdOJbN4xWpF+0OrX7kAfyyzGsaK6wDPkLWoPLbmRZ/A+CIhlvIChtdTri7i5mZkVmX1YoS7DMQjoS4ScAOK7XRmkaE5vLOjYT6SszhV4WsB0ZBKyOraTa7W8nX8XwRPlK2nWZAq//w5FDRG6GGEYs+1MoEn83gevGTDGGwkSioqv1HbOJ1G5F4t0SYK3jeu+qcHd/AjnjFkgXVwmMPuYTSDy38X53YAo6GB0aBIaeO1DVnROANY7rXVMFt/uyRq07jjqUJv/ag/QAl8ddMDDWtOPtD158de8Vd2cIah6+Fe18J2A4I/83rRQOlnf0zyw4SGvDjOj1OFLevoByT+0CBubIGXR0Ct3UoON6n0ZK/S4kSnYSI45HYXLuz7Ry89EMm6khg4wwd/i5bFEws9GHTTiutw+JQEvR/D4TvYe5yAJ61KFmCZbZkWzW0DDWk5yVsAD8BOnTILDgfRtxGc1ooqzc8vPXfYjyCmvqFhzk2KaxuK9sYCsEVkir3B5AmRS3I65kDGNprAGv9T3It6sLvfvljuv1IRGlHnGBI2h8u9AC7EP9slzmgJ/LjhvFtfVr2m+iB9rR4mtGnPABFNN2iJA6rtdi7m3j3gbNb2ING0Y3ZOPkrChuq+gMAUNh7sRYNDtMfwbNbzsIKiKNEOheB5I4GzP/rA9hAegv49oQHos9lKlmY7itXhSY3GlOdxIhWOb5zQR54esI8qbvL8eRmTFbiPrdSqC/3IeiQJKus+XEbL/H0ZwYAEbKGSHMtdaQ0YzG10oVI7NluaxZgoUm3Bspdj3Yg6xpFyRcM44mf9HJzOoea1IeRwO42XGvPINighXN+02+sGDwtY2/uwcVbw1b/8YJFOT27xFg2BgRahIm+V5Ysd+I+mz9k76KCNqXkRWzDo35DqTgz6P87fb/tWgxXGiSHd6MNplWNJ77gadNYZFxxOHehJTTbeY3A8DzjuvdGA2nMgTwasQNWgtyC0H+8H7gPsf1vhFaEO1I8WzbM4QsZyeYttqag0NIf5RknapH6Y3PwiRpJJnLtK4Q9YgwNlFGlWKI1nrgB6YtcVbXC0z7VhBEQYyYPj/muN5dCeFndagyj01YuJAgOeWLKCNESZ/NWF+LOL5288wxtF56CQxDJTCb0KcJogRaCWJu95prn0kaj2pQywSrmeLYrzE08YZJrjYyQvkqIsChjA2doVM2R9Ip4d+N51+5AxXBpAa4oxnDcEVh37A9iIvqQiLzW1Ami/C4d6AFuAyNkTUutBAomF2kw2lDE9w31znm3k0ofcud5u8BtNsvMt93AW2O613hqzI4iGBuCD13v7lvwTxnMSIOJwJvcVzP5lOqD/XnzShovjPUH8tF2Io/30gYroXIXaAFKc/LuSCMIY7pLKQjvMNxvS9TJm2KyalVog80i/8GlN88nLHBcr7daGz+3HG9D/i5bNiFoRkl+DuLoDrOXvQu7Dgvd1zv/eb5lhs7FxGVjtB1O8z9FiGp5CzH9W4HbvVz2UPFJkxmi/VojC1h3IXmySI0B041mUhvCl87HdQywWqjOIPiLmCT2Z2StOWDTF3VFzTRrag5jqxmb6G0as7Oo4FQwaGJuZyAGE1QbNa3E7ceEfDvIV+4ZiTiJmXLaEQ6GVtcdBdaZDZLQjviFt6DuJBPIy5uEk3yOxHxOQ1xE88iomZ9zPLA36AiDENoUVh3lc+a+59v7hN9WVeaez2LQp/+O5pXK9HifJ/jevdHxStDME9DnMII8A9TeLpPIu70BNOeD6K5tMtxvX9CFty9GKfqMiIZiDuyP9iLqkZZN6J2xOldjgj19Y7rXRu6RTvikF407ekxz1yMuOFVaEwvAD5jnrcSEbkO84yvID3noBm7LsSBLwE+Bfy743p3m+ctA9ah9ziGiP+95tpGRKxuQUT2SuBfHdf70kzEw1omWCcRWPcmgVtCLHBnwjWbpgqhCC1cS7A2A/ej3TiMPKHEafMAdTHFOesIHHJPRMRiEerbF/xcdixShbgFhQl9KMwZOK53Zbnnool+KUpQZ6/x0SRfRyDGXQpsDC3YPcYQcJ9pZzciLl2ICIEWweciBoUBowdqRNWKFqKFFyVYbchid6PtjxmjDYioLEdEJlrhpwmJYyCivrlM/2284kYzFrcgYm1L1Z9tzvUjsehHjuvtJD4B5EJMUQnE/V7o57LhCjcHHNdbgwjTuYg4RcO+tgPvjjil9jquN4ys0x2o0vpn0OZ0HSIskyiNdC5CUHvNWD9EINJvNv25loCpuB64K0KMfNPXxxCxvA54wXG9qZI8JqImUySbSfVO828BseThIg9J+bKfq+D2DYibyqCXtD7ButZPZdxaLcCKXD+MHP9ozj+J9Dq2AKrdgaOYBL44jaoqu5Ej6qETZuLuIfBf243hkCPYTxCy9XrzOYoW+d2IuJS8H3N/n0CXGBcdX0AWu/HIdQ+i+dIOnBIm9CFx9Hhz/SOVRAaYfj2BMpquQYt6EI1pBnE5VyJO8DvAA47rrbAlusxzTyEwbjxAjGOractXEWF6nlLfuw0JHvR9BLoyqxZoJShc8gLwVAL3t8+0GwKOdiHiQjPIav9wHOfkq17jejTeHSjjybQZpVrlsMIBw8No0oWVxcfGXLOTyuqtNaKJUUDchHWejPpa7WF+hDiA3mNc9ZcohhHxv9HPZftivrdhVdXCT7BajSGRu4XklNKj5rC6MpsX/DNxDwpl2OwE3k5gKGmK+XlSf7Yj0XUFIjB3ERC+DApz6SDgiipCiIj6jut5iPs4GUWKLDf/2zJxnea7641+JwOsJpAqHk2yBPq57DPhdjlBMd9Jkr33xwh0v3aur0LjZrOFxBoVDAf5MCI8DcBxBFlZQBtiOd3UZkQwuwjGYFqoVYJlY+xA8v8hj2wjwkSDigtot0lM2heCtWINoYyjlgMIZ24ooBc4W7Fec408IkTRHW4SLbqfoQnjIyKcFAI0QGWFA6KIKwcPQeC1vXccwgHyRQiZypegif4mNDfaCcKc7AJ/Rcwt9lI6JqDF9TSBSLiUQCxsQHGoECy0qmE5TMf19iCVg3XnOBlljrDuA2vNM7YROEMXmN7GMUgy4QiPs+UoO83nJHKVKHdva/V1UNuXhc73Uz4N0gTqTxdBHv1poaPYZRUAAAcHSURBVOYIltlBT0Avrx9xV2G9VDulBGsEeKjCFCDvMp9PYXQuhi0P33OCZPa4FjEGvG8WimIMMb3IhnIVXyxi46WS4LheB1Li24D7aA27vYgLXklyWFRsu4zP2PcISnm933G97eZ9r0SLcgL43kzzopt7jpmj33G9zUh0vNH0bREqQLGHgEscZnrvwfqXVYposYtysL5cDlqbVsqZAKaqxpMnYCbaOcpEwnrEQk+iUJK4FLbR4hGPUpk7QzNS5u8G1oVY7mUESvgC8G3mj/5qNjFd682shpU4Khn/ZaSwzhBkUdiJypq/iDapFUhh30iyXjMJtrbimcgVYbFJm32p+X4AcWFTtbUF6abehBb0teUWr9kge5Dy+kxENKzPm+XobYD8XIfrWCJljTPlYGNxQcTXVlyqJ14cD6OOYH2NMoOklLVIsJoR2/ws8I0YOX4pxXGEB4B7KzSV2t1hHcWy/jIC0eIAcN98yCl0FONc5AYB0tXcjEz7RSlfzAZkF0tVc9lwWQ8iorEEqQrqEXcPsmZWmj3jHLQR9iNXi7LciiFag4irCuuRDqDFXE8gYZTA+NOtRASur8I2xjbFfFrftHLIhH5jnV1tCvN2x/UyZdZMPUF0yggzIMS1aCU8CbH7axImzBmhv63iPFpbrQRGMbkUsePftINr9CRhZefjFFskUxxGGJXAu9HcPIB0PDv8XDZKrDKI0FhxsJpsGRZbCGognkGgGB9CvkiVIOysvBC43Fr+pkArQaTFfiRa/SvBYj4lpEyPYqlp3w+RT9Z013GveV498DZDCJNwCkGZrl5EKK3I/U7Kj//xBHn0djGDhAo1RbDMC3oT8ukoCco1xCVcTGAEuSVUorvKIBl/fWQnaEO7K2jn+GKaDveIoo7A4DJJjCHFzJNGZCK3KJ96Ix4DyKBTQF7v7zL32UmFubIMEb2XYOFfi7zCM3EEx3E96/h8BUHM5Q+RmLWZQCy8mJiMJOae70UEb4wgi8Z0MEJgbDgTOCGhza1InwhaQz9AXKT1pzoVWBW9NtTXa9DYjKG+Tnt91ZpI2ICU50kZLVcSyNF5wPNz2UonVgFxT1FYi8ck8vidMntBirmDiXfsQaJSO6ogvA5jzTWc1Qq0qYVdOabSoyQ96wHgEqQuWEzge1WJxdliFyq3/ilk1XwEGXUeclxvL9oIbVB2B0FVZBDBsKqPvY7rrTP9PQ1Yb+IwbXB5C3J4tazms0gauLDavhuMm2fdi9bVvcjNYlOozdb51/prbUT+dHkTD7kKbTBfB252XO/xyLU3ESTq2wQ8HUq3UzVqimAZK1cssTIdPInAJLoTORXOFCvQTrcFuD/VXdUE7iOocvNJYIUhYgW0CFYi7uNptNksBhbGePpXgh2Im1qBNsxRtCgrhlm8t6JFf5m5z/lokQ8iYltHcQUpm+Tver+4QvnDyOh0FrIiLgP6jKf6EiS2Nppr15pohep7TVGu+1tR/GInchC1Poit5pwNkdqMIk6s2LrZXHs9egd3IM6xz/TTXgsa55ur0AvGoqZEwinQgvJaWevJWj+XnY0cQucg1vgmP6a0fYojgu0o28A2xDmdicpx/RUiZANIRDmHwIHyeALRvmIY8f8+ArFqo8n/Ve19hlEA+MWIkNp4uk5EdKyxKIMIwheAM/xc9oXIffpRsYy1iNs/HnEol6ENOw/kEFc14xTPhkn4OyRmPo/G+2TEdZ5lnt8LfAk4zwZNm2vzwO1I57gJMRMnmWvPNtf2mWvPKSM5VYya4rCmgPV+t4r2GRe2dFzPRvx7zD9F+xAKhLV6kOnqBSbQImskyHkfxRNI7LGe3CBx5B1oASZtHD2IqNSTXHptP/JDasToqwzH8hTioruRwvY1SCm9D6PwNR7Ya5E4kjfnJyL3q4Rj3m9+N47i3qYFI2I+jrh1O1/bgT9Ca+0XBOXdBpL85sx9Po+4rcUExG4vGv/eiH/Y59AYTJBsNSwgIvhlImNixnEzIkw2g4aDxqMPvYfY9hqJZLvjepeGrl1KUNRjJxJpo9fmCNZwxREl5VNu1hAc17sIBWD2AO8PU/oZ3PMSpGhdM9O0FynmLxzX24C4gi0o4DjNrlqjmE8c1hlIv3A9s8AKG4vjBJKrU2L1MoTReS0jUCg/SJoKuqYxLwiWcRBchWThZ2dJMZ4HnkgKME1xdMJsVCchEboLKYlbEaF6dB6FY70sMS8IFrIKPUVxOM2MYIheahF8+cHqcmw4TAPSda2hfMaBFDWA+WIlHAJum2kgaooUZsMbQdawBqQWWIe4q3QDq3HMFw5r15FuQIqjCh9GHFYD8mfanxKrFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkX1+P/co6LbmmfT1AAAAABJRU5ErkJggg==" alt="Livingstone Primary School">
+      </div>
+
+      <div class="winter-sky"></div>
+    </main>
+
+    <footer class="bottom-bar">
+      <div class="player-info player-bottom-info">
+        <div class="player-label">Player 2</div>
+        <div class="player-name" id="bottomPlayerName">Lower</div>
+        <div class="health-bar">
+          <div class="health-fill" id="bottomHealthFill"></div>
+        </div>
+        <div class="health-value" id="bottomHealthValue">100</div>
+        <div class="player-snowball" id="bottomSnowballLabel">Snowball 1</div>
+      </div>
+      <div class="control-hint">
+        <div>Top player: A/D move, S throw, W switch</div>
+        <div>Bottom player: ←/→ move, ↑ throw, ↓ switch</div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="overlay" id="introOverlay">
+    <div class="host-card">
+      <div class="host-title">Welcome to Snowball Showdown!</div>
+      <div class="host-text">I'm Frosty, your snowball host. Two players will fight with snowballs and answer science questions.</div>
+      <div class="host-text">Enter each player's name, then press Start.</div>
+      <div class="name-row">
+        <label>
+          Player 1 Name<br />
+          <input type="text" id="topNameInput" placeholder="Upper player" maxlength="12" />
+        </label>
+        <label>
+          Player 2 Name<br />
+          <input type="text" id="bottomNameInput" placeholder="Lower player" maxlength="12" />
+        </label>
+      </div>
+      <div class="button-row">
+        <button id="startGameButton">Start Game</button>
+      </div>
+      <div class="host-note" id="nameMessage"></div>
+      <div class="host-note">Question keys: top uses 1/2/3/4, bottom uses 7/8/9/0</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="questionOverlay">
+    <div class="question-card">
+      <div class="question-title">Science Question</div>
+      <div class="question-text" id="questionText"></div>
+      <div class="question-options" id="questionOptions"></div>
+      <div class="question-answer-wrapper">
+        <div class="question-answer-group">
+          <div class="question-answer-label">Top player (1 2 3 4)</div>
+          <div class="answer-button-row" id="topAnswerButtons"></div>
+        </div>
+        <div class="question-answer-group">
+          <div class="question-answer-label">Bottom player (7 8 9 0)</div>
+          <div class="answer-button-row" id="bottomAnswerButtons"></div>
+        </div>
+      </div>
+      <div class="question-hint">First response locks in. Wrong answer gives the other player 5 seconds.</div>
+      <div class="question-timer">Time left: <span id="questionTimer">5</span>s</div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="endOverlay">
+    <div class="host-card">
+      <div class="host-title" id="endTitle">Game Over</div>
+      <div class="host-text" id="endText">Frosty will announce the winner here.</div>
+      <div class="button-row">
+        <button id="playAgainButton">Play Again</button>
+        <button id="backToStartButton">Back to Start</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+const topPlayerNameEl = document.getElementById('topPlayerName');
+const bottomPlayerNameEl = document.getElementById('bottomPlayerName');
+const topHealthFill = document.getElementById('topHealthFill');
+const bottomHealthFill = document.getElementById('bottomHealthFill');
+const topHealthValue = document.getElementById('topHealthValue');
+const bottomHealthValue = document.getElementById('bottomHealthValue');
+const topSnowballLabel = document.getElementById('topSnowballLabel');
+const bottomSnowballLabel = document.getElementById('bottomSnowballLabel');
+const arena = document.getElementById('arena');
+const snowballLayer = document.getElementById('snowballLayer');
+const introOverlay = document.getElementById('introOverlay');
+const questionOverlay = document.getElementById('questionOverlay');
+const endOverlay = document.getElementById('endOverlay');
+const questionText = document.getElementById('questionText');
+const questionOptions = document.getElementById('questionOptions');
+const questionTimer = document.getElementById('questionTimer');
+const endTitle = document.getElementById('endTitle');
+const endText = document.getElementById('endText');
+const startGameButton = document.getElementById('startGameButton');
+const playAgainButton = document.getElementById('playAgainButton');
+const backToStartButton = document.getElementById('backToStartButton');
+const topNameInput = document.getElementById('topNameInput');
+const bottomNameInput = document.getElementById('bottomNameInput');
+const fullscreenButton = document.getElementById('fullscreenButton');
+const touchToggleButton = document.getElementById('touchToggleButton');
+const nameMessage = document.getElementById('nameMessage');
+
+const playerTopEl = document.getElementById('playerTop');
+const playerBottomEl = document.getElementById('playerBottom');
+
+const arenaBounds = { width: 0, height: 0, left: 0, top: 0 };
+const snowballTypes = [
+  { level: 1, damage: 1, label: 'Snowball 1' },
+  { level: 2, damage: 2, label: 'Snowball 2' },
+  { level: 3, damage: 3, label: 'Snowball 3' },
+  { level: 4, damage: 4, label: 'Snowball 4' },
+  { level: 5, damage: 6, label: 'Snowball 5' }
+];
+
+
+const gameAudio = (() => {
+  let context = null;
+  let masterGain = null;
+  let muted = false;
+
+  function init() {
+    if (muted) return null;
+    if (!context) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      context = new AudioContextClass();
+      masterGain = context.createGain();
+      masterGain.gain.value = 0.18;
+      masterGain.connect(context.destination);
+    }
+    if (context.state === 'suspended') context.resume();
+    return context;
+  }
+
+  function now() {
+    const ctx = init();
+    return ctx ? ctx.currentTime : 0;
+  }
+
+  function tone(freq, start, duration, options = {}) {
+    const ctx = init();
+    if (!ctx || !masterGain) return;
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = options.type || 'sine';
+    oscillator.frequency.setValueAtTime(freq, start);
+    if (options.endFreq) oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, options.endFreq), start + duration);
+    const peak = options.gain ?? 0.35;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(masterGain);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.03);
+  }
+
+  function chord(freqs, start, duration, options = {}) {
+    freqs.forEach(freq => tone(freq, start, duration, options));
+  }
+
+  function arpeggio(freqs, start, step, duration, options = {}) {
+    freqs.forEach((freq, index) => tone(freq, start + index * step, duration, options));
+  }
+
+  return {
+    unlock: init,
+    start() {
+      const t = now();
+      arpeggio([523.25, 659.25, 783.99, 1046.5], t, 0.07, 0.16, { type: 'triangle', gain: 0.28 });
+    },
+    question() {
+      const t = now();
+      chord([783.99, 1046.5], t, 0.12, { type: 'triangle', gain: 0.22 });
+      chord([783.99, 1046.5], t + 0.18, 0.12, { type: 'triangle', gain: 0.22 });
+    },
+    answerTap() {
+      tone(523.25, now(), 0.06, { type: 'triangle', gain: 0.18 });
+    },
+    correct() {
+      const t = now();
+      arpeggio([523.25, 659.25, 783.99, 1046.5], t, 0.055, 0.13, { type: 'triangle', gain: 0.24 });
+    },
+    wrong() {
+      const t = now();
+      arpeggio([392, 329.63, 261.63], t, 0.07, 0.16, { type: 'sawtooth', gain: 0.09 });
+    },
+    upgrade(level) {
+      const t = now();
+      const notes = [523.25, 659.25, 783.99, 987.77, 1174.66].slice(0, Math.max(2, level));
+      arpeggio(notes, t, 0.045, 0.12, { type: 'triangle', gain: 0.2 });
+    },
+    switchSnowball() {
+      const t = now();
+      arpeggio([783.99, 987.77], t, 0.035, 0.07, { type: 'square', gain: 0.08 });
+    },
+    throwSnowball(level) {
+      const t = now();
+      const startFreq = 980 + level * 70;
+      tone(startFreq, t, 0.11, { type: 'sine', endFreq: 260, gain: 0.16 });
+    },
+    hit(level) {
+      const t = now();
+      tone(180 + level * 25, t, 0.055, { type: 'triangle', endFreq: 90, gain: 0.3 });
+      tone(640, t, 0.035, { type: 'sine', endFreq: 420, gain: 0.08 });
+    },
+    countdown(remaining) {
+      const t = now();
+      const freq = remaining === 3 ? 523.25 : remaining === 2 ? 659.25 : 783.99;
+      tone(freq, t, 0.08, { type: 'square', gain: 0.08 });
+    },
+    victory() {
+      const t = now();
+      arpeggio([523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1318.51], t, 0.075, 0.16, { type: 'triangle', gain: 0.24 });
+      chord([523.25, 659.25, 783.99, 1046.5], t + 0.62, 0.45, { type: 'triangle', gain: 0.22 });
+    },
+    draw() {
+      const t = now();
+      arpeggio([523.25, 440, 349.23], t, 0.13, 0.22, { type: 'triangle', gain: 0.18 });
+    }
+  };
+})();
+
+const questions = [
+  { question: 'Which planet is known as the Red Planet?', options: ['Venus', 'Mars', 'Mercury', 'Jupiter'], answer: 1 },
+  { question: 'What gas do plants take in from the air?', options: ['Oxygen', 'Nitrogen', 'Carbon dioxide', 'Hydrogen'], answer: 2 },
+  { question: 'What is the main source of energy for the Earth?', options: ['The Moon', 'The Sun', 'Volcanoes', 'Ocean currents'], answer: 1 },
+  { question: 'Why do we need a skeleton?', options: ['To make us taller', 'To protect organs and support the body', 'To breathe', 'To digest food'], answer: 1 },
+  { question: 'Which part of a plant absorbs water from the soil?', options: ['Flowers', 'Roots', 'Leaves', 'Stem'], answer: 1 },
+  { question: 'What is the process called when a liquid turns into a gas?', options: ['Condensation', 'Evaporation', 'Freezing', 'Melting'], answer: 1 },
+  { question: 'Which force pulls objects towards the Earth?', options: ['Magnetism', 'Gravity', 'Friction', 'Electricity'], answer: 1 },
+  { question: 'What do bees collect from flowers?', options: ['Rocks', 'Pollen', 'Sand', 'Water'], answer: 1 },
+  { question: 'Which state of matter has a fixed shape and volume?', options: ['Gas', 'Liquid', 'Solid', 'Plasma'], answer: 2 },
+  { question: 'What is the largest organ in the human body?', options: ['Heart', 'Liver', 'Skin', 'Lungs'], answer: 2 },
+  { question: 'What causes day and night on Earth?', options: ['The Moon orbiting Earth', 'Earth spinning on its axis', 'The Sun moving around Earth', 'Clouds blocking sunlight'], answer: 1 },
+  { question: 'Which of these is a vertebrate?', options: ['Octopus', 'Spider', 'Fish', 'Crab'], answer: 2 },
+  { question: 'What do herbivores eat?', options: ['Other animals', 'Plants', 'Both plants and animals', 'Nothing'], answer: 1 },
+  { question: 'What is weathering?', options: ['The movement of rocks by wind', 'The breaking down of rocks', 'The formation of mountains', 'The growth of plants'], answer: 1 },
+  { question: 'Which instrument measures temperature?', options: ['Barometer', 'Thermometer', 'Anemometer', 'Compass'], answer: 1 },
+  { question: 'What is the name of the path planets follow around the Sun?', options: ['Orbit', 'Axis', 'Rotation', 'Galaxy'], answer: 0 },
+  { question: 'Which type of rock is formed from cooled lava?', options: ['Sedimentary', 'Igneous', 'Metamorphic', 'Fossil'], answer: 1 },
+  { question: 'What is the main function of the lungs?', options: ['Digest food', 'Pump blood', 'Exchange gases', 'Store energy'], answer: 2 },
+  { question: 'What is a habitat?', options: ['A type of weather', 'A place where an organism lives', 'A food chain', 'A kind of plant'], answer: 1 },
+  { question: 'Which part of the cell contains genetic material?', options: ['Cell membrane', 'Cytoplasm', 'Nucleus', 'Chloroplast'], answer: 2 },
+  { question: 'What is the freezing point of water in degrees Celsius?', options: ['0°C', '32°C', '100°C', '10°C'], answer: 0 },
+  { question: 'What do we call animals that are active at night?', options: ['Diurnal', 'Nocturnal', 'Herbivores', 'Aerial'], answer: 1 },
+  { question: 'Which material is a good conductor of electricity?', options: ['Wood', 'Plastic', 'Copper', 'Rubber'], answer: 2 },
+  { question: 'What is the process of water vapour cooling into liquid droplets called?', options: ['Evaporation', 'Condensation', 'Precipitation', 'Sublimation'], answer: 1 },
+  { question: 'What is the smallest part of an element?', options: ['Molecule', 'Atom', 'Cell', 'Proton'], answer: 1 },
+  { question: 'Which planet has rings around it?', options: ['Mars', 'Venus', 'Saturn', 'Mercury'], answer: 2 },
+  { question: 'What is a food chain?', options: ['A line of shops', 'A way energy moves through living things', 'A type of seed', 'A weather map'], answer: 1 },
+  { question: 'What do muscles help us do?', options: ['Think', 'Move', 'Sleep', 'See'], answer: 1 },
+  { question: 'Which part of the ear helps us hear?', options: ['Nose', 'Ears', 'Tongue', 'Skin'], answer: 1 },
+  { question: 'What causes tides in the oceans?', options: ['The Sun only', 'The Moon and Sun', 'Wind only', 'Clouds'], answer: 1 },
+  { question: 'Which layer of Earth is made of solid rock and is where we live?', options: ['Core', 'Mantle', 'Crust', 'Atmosphere'], answer: 2 },
+  { question: 'What is the main job of roots in a plant?', options: ['Make flowers', 'Absorb water', 'Catch sunlight', 'Produce fruit'], answer: 1 },
+  { question: 'Which gas is most abundant in the air we breathe?', options: ['Oxygen', 'Carbon dioxide', 'Nitrogen', 'Hydrogen'], answer: 2 },
+  { question: 'What do we call the change from gas to liquid?', options: ['Melting', 'Freezing', 'Condensation', 'Boiling'], answer: 2 },
+  { question: 'What is the name for a baby frog?', options: ['Pup', 'Tadpole', 'Larva', 'Cub'], answer: 1 },
+  { question: 'Which of these is an example of a predator?', options: ['Rabbit', 'Sheep', 'Fox', 'Cow'], answer: 2 },
+  { question: 'What is a renewable resource?', options: ['Coal', 'Oil', 'Wind', 'Natural gas'], answer: 2 },
+  { question: 'Why does ice float on water?', options: ['It is heavier', 'It is less dense', 'It is warmer', 'It is magnetic'], answer: 1 },
+  { question: 'Which organ pumps blood around the body?', options: ['Lungs', 'Stomach', 'Heart', 'Kidneys'], answer: 2 },
+  { question: 'What is an ecosystem?', options: ['A machine', 'A group of living and non-living things interacting', 'A type of weather', 'A kind of rock'], answer: 1 },
+  { question: 'Which planet is closest to the Sun?', options: ['Earth', 'Mars', 'Mercury', 'Venus'], answer: 2 },
+  { question: 'What is the main function of the digestive system?', options: ['To carry oxygen', 'To break down food', 'To make blood', 'To control breathing'], answer: 1 },
+  { question: 'What is the name of the force that slows moving objects?', options: ['Gravity', 'Friction', 'Magnetism', 'Push'], answer: 1 },
+  { question: 'Which body system helps you breathe?', options: ['Digestive', 'Circulatory', 'Respiratory', 'Nervous'], answer: 2 },
+  { question: 'What do we call a scientist who studies rocks?', options: ['Biologist', 'Geologist', 'Astronomer', 'Chemist'], answer: 1 },
+  { question: 'Which material is transparent?', options: ['Brick', 'Wood', 'Glass', 'Metal'], answer: 2 },
+  { question: 'What is the moonlight mostly reflected from?', options: ['Stars', 'The Sun', 'Earth', 'Clouds'], answer: 1 },
+  { question: 'Which part of a flower makes pollen?', options: ['Stigma', 'Petal', 'Anther', 'Root'], answer: 2 },
+  { question: 'What is the process of plants making food called?', options: ['Respiration', 'Photosynthesis', 'Digestion', 'Fermentation'], answer: 1 },
+  { question: 'What do we use to measure force?', options: ['Thermometer', 'Ruler', 'Newton meter', 'Stopwatch'], answer: 2 },
+  { question: 'What are the three main states of matter?', options: ['Solid, liquid, gas', 'Water, air, fire', 'Hot, cold, warm', 'Metal, wood, plastic'], answer: 0 },
+  { question: 'Which animal is a mammal?', options: ['Shark', 'Dolphin', 'Eel', 'Lizard'], answer: 1 },
+  { question: 'What is an example of precipitation?', options: ['Snow', 'Sunshine', 'Wind', 'Fog'], answer: 0 },
+  { question: 'What is the name of the layer of gas around Earth?', options: ['Hydrosphere', 'Atmosphere', 'Lithosphere', 'Biosphere'], answer: 1 },
+  { question: 'What does a compass help you find?', options: ['Temperature', 'Direction', 'Weight', 'Speed'], answer: 1 },
+  { question: 'Which food is a rich source of protein?', options: ['Bread', 'Chicken', 'Rice', 'Orange'], answer: 1 },
+  { question: 'Why do people wear sunscreen?', options: ['To stay warm', 'To protect skin from UV rays', 'To improve hearing', 'To grow hair'], answer: 1 },
+  { question: 'What is erosion?', options: ['The making of rocks', 'The movement of soil and rock by wind or water', 'The growth of ice', 'The cooling of lava'], answer: 1 },
+  { question: 'Which planet is known for its Great Red Spot?', options: ['Mars', 'Jupiter', 'Neptune', 'Saturn'], answer: 1 },
+  { question: 'What do you call a change from solid to liquid?', options: ['Freezing', 'Condensation', 'Melting', 'Evaporation'], answer: 2 },
+  { question: 'What is the main purpose of the circulatory system?', options: ['To move blood around the body', 'To digest food', 'To make oxygen', 'To support the brain'], answer: 0 },
+  { question: 'Which of these is not a renewable energy source?', options: ['Wind', 'Solar', 'Coal', 'Hydro'], answer: 2 },
+  { question: 'What is the term for the amount of matter in an object?', options: ['Weight', 'Volume', 'Mass', 'Density'], answer: 2 },
+  { question: 'What causes seasons on Earth?', options: ['The Sun getting closer and farther away', 'Earth tilting as it orbits the Sun', 'The Moon blocking sunlight', 'The atmosphere changing'], answer: 1 },
+  { question: 'What do we call animals that eat both plants and animals?', options: ['Herbivores', 'Carnivores', 'Omnivores', 'Scavengers'], answer: 2 },
+  { question: 'Which part of the plant is involved in photosynthesis?', options: ['Roots', 'Stem', 'Leaves', 'Flowers'], answer: 2 },
+  { question: 'What is a conductor?', options: ['A material that does not allow electricity to pass', 'A material that allows electricity to pass', 'A tool for measuring temperature', 'A kind of magnet'], answer: 1 },
+  { question: 'What causes a shadow?', options: ['Light reflecting off a mirror', 'An object blocking light', 'Dust in the air', 'Heat rising from the ground'], answer: 1 },
+  { question: 'How many planets are in our Solar System?', options: ['7', '8', '9', '10'], answer: 1 },
+  { question: 'Which tool is used to measure length?', options: ['Thermometer', 'Ruler', 'Compass', 'Scale'], answer: 1 },
+  { question: 'What does the word transparent mean?', options: ['Easy to break', 'Allows light through', 'Makes a sound', 'Absorbs water'], answer: 1 },
+  { question: 'What is the name of the female reproductive part of a flower?', options: ['Stamen', 'Sepal', 'Pistil', 'Petal'], answer: 2 },
+  { question: 'Who invented the first practical electric light bulb?', options: ['Albert Einstein', 'Thomas Edison', 'Isaac Newton', 'Nikola Tesla'], answer: 1 },
+  { question: 'Which part of the body controls balance?', options: ['Brainstem', 'Cerebellum', 'Heart', 'Liver'], answer: 1 },
+  { question: 'What is the main role of the nervous system?', options: ['Carry nutrients', 'Send messages around the body', 'Break down food', 'Produce hormones'], answer: 1 },
+  { question: 'What is the name of the star at the centre of our Solar System?', options: ['Moon', 'Mars', 'Sun', 'Venus'], answer: 2 },
+  { question: 'What is the process of turning a solid into a gas without becoming liquid first called?', options: ['Condensation', 'Evaporation', 'Sublimation', 'Freezing'], answer: 2 },
+  { question: 'Which gas do humans breathe out?', options: ['Oxygen', 'Carbon dioxide', 'Nitrogen', 'Hydrogen'], answer: 1 },
+  { question: 'What is the largest planet in the Solar System?', options: ['Mars', 'Saturn', 'Jupiter', 'Neptune'], answer: 2 },
+  { question: 'What do we call the remains of plants and animals preserved in rock?', options: ['Crystals', 'Fossils', 'Minerals', 'Sediments'], answer: 1 },
+  { question: 'Which resource comes from the sea and is used in cooking?', options: ['Coal', 'Salt', 'Wood', 'Gold'], answer: 1 },
+  { question: 'What is the function of the stomach?', options: ['Pump blood', 'Digest food', 'Store oxygen', 'Filter air'], answer: 1 },
+  { question: 'Which is a way to reduce waste?', options: ['Throw away everything', 'Recycle', 'Burn all rubbish', 'Leave litter outside'], answer: 1 },
+  { question: 'What is a producer in a food chain?', options: ['A plant', 'A lion', 'A mushroom', 'A bird'], answer: 0 },
+  { question: 'Which property describes how much space an object takes up?', options: ['Mass', 'Weight', 'Volume', 'Density'], answer: 2 },
+  { question: 'What is the Earth made mostly of?', options: ['Water', 'Rock', 'Air', 'Metal'], answer: 1 },
+  { question: 'What is the name of the force that keeps planets in orbit around the Sun?', options: ['Magnetism', 'Friction', 'Gravity', 'Heat'], answer: 2 },
+  { question: 'What do we call the change from liquid to solid?', options: ['Evaporation', 'Melting', 'Freezing', 'Condensation'], answer: 2 },
+  { question: 'Which animal can breathe through gills?', options: ['Frog', 'Dolphin', 'Fish', 'Kangaroo'], answer: 2 },
+  { question: 'What does a thermometer measure?', options: ['Speed', 'Volume', 'Temperature', 'Mass'], answer: 2 },
+  { question: 'What is the name of the process where plants lose water vapour?', options: ['Transpiration', 'Respiration', 'Digestion', 'Photosynthesis'], answer: 0 },
+  { question: 'Which of these is a non-living part of an ecosystem?', options: ['Bird', 'Tree', 'Water', 'Mushroom'], answer: 2 },
+  { question: 'Why do some objects float in water?', options: ['They are heavier', 'They are less dense', 'They are colder', 'They are always round'], answer: 1 },
+  { question: 'Which part of the body helps us think and learn?', options: ['Heart', 'Brain', 'Liver', 'Stomach'], answer: 1 },
+  { question: 'What is a continent?', options: ['A large body of water', 'A large landmass', 'A type of rock', 'A weather pattern'], answer: 1 },
+  { question: 'Which word means to make something happen again?', options: ['Repeat', 'Reproduce', 'Recycle', 'Rebuild'], answer: 0 },
+  { question: 'What causes lightning?', options: ['Static electricity', 'Gravity', 'Friction in water', 'Sunlight'], answer: 0 },
+  { question: 'Which is the best example of a simple machine?', options: ['Hammer', 'Wheel', 'Book', 'Table'], answer: 1 },
+  { question: 'What is the hardest natural substance on Earth?', options: ['Gold', 'Iron', 'Diamond', 'Quartz'], answer: 2 },
+  { question: 'Which part of the body is responsible for releasing hormones?', options: ['Brain', 'Endocrine glands', 'Skin', 'Lungs'], answer: 1 },
+  { question: 'What is a fossil?', options: ['A living thing', 'A preserved remains or imprint of a living thing', 'A type of volcano', 'A cloud pattern'], answer: 1 }
+];
+
+const playerState = {
+  top: { name: 'Upper', x: 360, health: 100, ownedLevels: [1], currentLevelIndex: 0 },
+  bottom: { name: 'Lower', x: 360, health: 100, ownedLevels: [1], currentLevelIndex: 0 }
+};
+
+const pressedKeys = new Set();
+const touchControlState = {
+  topLeft: false,
+  topRight: false,
+  bottomLeft: false,
+  bottomRight: false
+};
+let snowballs = [];
+let lastTime = 0;
+let gamePaused = true;
+let nextQuestionTimer = null;
+let questionState = null;
+let questionCountdown = null;
+let gameOver = false;
+let availableQuestions = [...questions];
+const playerBounds = { minX: 12, maxX: 760 };
+
+function setArenaBounds() {
+  const rect = arena.getBoundingClientRect();
+  arenaBounds.width = rect.width;
+  arenaBounds.height = rect.height;
+  arenaBounds.left = rect.left;
+  arenaBounds.top = rect.top;
+  playerBounds.maxX = Math.max(120, rect.width - 92);
+}
+
+function updatePlayerDisplays() {
+  topPlayerNameEl.textContent = playerState.top.name;
+  bottomPlayerNameEl.textContent = playerState.bottom.name;
+  topHealthValue.textContent = playerState.top.health;
+  bottomHealthValue.textContent = playerState.bottom.health;
+  topHealthFill.style.width = `${Math.max(playerState.top.health, 0)}%`;
+  bottomHealthFill.style.width = `${Math.max(playerState.bottom.health, 0)}%`;
+  topSnowballLabel.textContent = snowballTypes[playerState.top.ownedLevels[playerState.top.currentLevelIndex] - 1].label;
+  bottomSnowballLabel.textContent = snowballTypes[playerState.bottom.ownedLevels[playerState.bottom.currentLevelIndex] - 1].label;
+}
+
+function positionPlayers() {
+  playerTopEl.style.left = `${playerState.top.x}px`;
+  playerBottomEl.style.left = `${playerState.bottom.x}px`;
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getSnowballDamage(level) {
+  return snowballTypes.find(item => item.level === level).damage;
+}
+
+function getSnowballClass(level) {
+  return `snowball level-${level}`;
+}
+
+function createSnowball(owner, level) {
+  const ball = document.createElement('div');
+  ball.className = getSnowballClass(level);
+  snowballLayer.appendChild(ball);
+  const startX = owner === 'bottom' ? playerState.bottom.x + 30 : playerState.top.x + 30;
+  const startY = owner === 'bottom' ? arenaBounds.height - 150 : 120;
+  const velocityY = owner === 'bottom' ? -320 : 320;
+  const snowball = {
+    element: ball,
+    owner,
+    x: startX,
+    y: startY,
+    vx: 0,
+    vy: velocityY,
+    level,
+    damage: getSnowballDamage(level)
+  };
+  ball.style.left = `${snowball.x}px`;
+  ball.style.top = `${snowball.y}px`;
+  snowballs.push(snowball);
+}
+
+function handleMovement(deltaTime) {
+  const speed = 280;
+  const moveAmount = speed * deltaTime;
+  if (!gamePaused && !questionState) {
+    if (pressedKeys.has('ArrowLeft') || touchControlState.bottomLeft) playerState.bottom.x -= moveAmount;
+    if (pressedKeys.has('ArrowRight') || touchControlState.bottomRight) playerState.bottom.x += moveAmount;
+    if (pressedKeys.has('a') || pressedKeys.has('A') || touchControlState.topLeft) playerState.top.x -= moveAmount;
+    if (pressedKeys.has('d') || pressedKeys.has('D') || touchControlState.topRight) playerState.top.x += moveAmount;
+  }
+  playerState.bottom.x = clamp(playerState.bottom.x, playerBounds.minX, playerBounds.maxX);
+  playerState.top.x = clamp(playerState.top.x, playerBounds.minX, playerBounds.maxX);
+  positionPlayers();
+}
+
+function updateSnowballs(deltaTime) {
+  snowballs.forEach(snowball => {
+    snowball.y += snowball.vy * deltaTime;
+    snowball.element.style.left = `${snowball.x}px`;
+    snowball.element.style.top = `${snowball.y}px`;
+  });
+  snowballs = snowballs.filter(snowball => {
+    const exceeded = snowball.y < -30 || snowball.y > arenaBounds.height + 30;
+    if (exceeded && snowball.element && snowball.element.parentNode) snowball.element.remove();
+    return !exceeded;
+  });
+}
+
+function getPlayerRect(playerKey) {
+  const element = playerKey === 'top' ? playerTopEl : playerBottomEl;
+  const rect = element.getBoundingClientRect();
+  return {
+    left: rect.left - arenaBounds.left,
+    right: rect.right - arenaBounds.left,
+    top: rect.top - arenaBounds.top,
+    bottom: rect.bottom - arenaBounds.top
+  };
+}
+
+function getSnowballSize(level) {
+  return [22, 28, 34, 40, 48][level - 1] || 22;
+}
+
+function checkCollision(snowball, targetRect) {
+  const size = getSnowballSize(snowball.level);
+  const snowballRect = {
+    left: snowball.x,
+    right: snowball.x + size,
+    top: snowball.y,
+    bottom: snowball.y + size
+  };
+  return snowballRect.left < targetRect.right && snowballRect.right > targetRect.left && snowballRect.top < targetRect.bottom && snowballRect.bottom > targetRect.top;
+}
+
+function processSnowballHits() {
+  snowballs = snowballs.filter(snowball => {
+    const targetOwner = snowball.owner === 'bottom' ? 'top' : 'bottom';
+    const targetRect = getPlayerRect(targetOwner);
+    if (checkCollision(snowball, targetRect)) {
+      const targetState = playerState[targetOwner];
+      targetState.health -= snowball.damage;
+      if (targetState.health < 0) targetState.health = 0;
+      gameAudio.hit(snowball.level);
+      if (snowball.element && snowball.element.parentNode) snowball.element.remove();
+      return false;
+    }
+    return true;
+  });
+}
+
+function updateGame(deltaTime) {
+  if (gamePaused || gameOver || questionState) return;
+  handleMovement(deltaTime);
+  updateSnowballs(deltaTime);
+  processSnowballHits();
+  updatePlayerDisplays();
+  refreshGameEnd();
+}
+
+function gameLoop(timestamp) {
+  if (!lastTime) lastTime = timestamp;
+  const deltaTime = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  updateGame(deltaTime);
+  requestAnimationFrame(gameLoop);
+}
+
+function setPlayerNames() {
+  const topName = topNameInput.value.trim();
+  const bottomName = bottomNameInput.value.trim();
+  playerState.top.name = topName || 'Upper';
+  playerState.bottom.name = bottomName || 'Lower';
+}
+
+function resetRound(showIntro = true) {
+  playerState.top.health = 100;
+  playerState.bottom.health = 100;
+  playerState.top.score = 0;
+  playerState.bottom.score = 0;
+  playerState.top.ownedLevels = [1];
+  playerState.bottom.ownedLevels = [1];
+  playerState.top.currentLevelIndex = 0;
+  playerState.bottom.currentLevelIndex = 0;
+  playerState.top.x = 360;
+  playerState.bottom.x = 360;
+  snowballs.forEach(s => { if (s.element && s.element.parentNode) s.element.remove(); });
+  snowballs = [];
+  gamePaused = true;
+  gameOver = false;
+  questionState = null;
+  clearTimeout(nextQuestionTimer);
+  clearInterval(questionCountdown);
+  questionOverlay.classList.add('hidden');
+  endOverlay.classList.add('hidden');
+  introOverlay.classList.toggle('hidden', !showIntro);
+  updatePlayerDisplays();
+  positionPlayers();
+  availableQuestions = [...questions];
+}
+
+function beginQuestions() {
+  if (gameOver) return;
+  clearTimeout(nextQuestionTimer);
+  nextQuestionTimer = setTimeout(() => {
+    showQuestion();
+  }, 60000);
+}
+
+function getNextQuestion() {
+  if (availableQuestions.length === 0) availableQuestions = [...questions];
+  const index = Math.floor(Math.random() * availableQuestions.length);
+  return availableQuestions.splice(index, 1)[0];
+}
+
+function showQuestion() {
+  if (gameOver) return;
+  gameAudio.question();
+  gamePaused = true;
+  const currentQuestion = getNextQuestion();
+  questionState = {
+    active: true,
+    firstAnswer: null,
+    secondChance: false,
+    currentQuestion
+  };
+  questionText.textContent = currentQuestion.question;
+  questionOptions.innerHTML = '';
+  ['A', 'B', 'C', 'D'].forEach((choice, index) => {
+    const option = document.createElement('div');
+    option.className = 'question-option';
+    option.innerHTML = `<strong>${choice}.</strong> ${currentQuestion.options[index]}`;
+    questionOptions.appendChild(option);
+  });
+  createAnswerButtons();
+  questionOverlay.classList.remove('hidden');
+  startQuestionTimer(10);
+}
+
+function startQuestionTimer(seconds) {
+  let remaining = seconds;
+  questionTimer.textContent = remaining;
+  clearInterval(questionCountdown);
+  questionCountdown = setInterval(() => {
+    remaining -= 1;
+    if (remaining > 0 && remaining <= 3) gameAudio.countdown(remaining);
+    if (remaining <= 0) {
+      clearInterval(questionCountdown);
+      questionTimer.textContent = '0';
+      endQuestion();
+      return;
+    }
+    questionTimer.textContent = remaining;
+  }, 1000);
+}
+
+function hideQuestion() {
+  questionOverlay.classList.add('hidden');
+  gamePaused = false;
+  questionState = null;
+  clearInterval(questionCountdown);
+  beginQuestions();
+}
+
+function applyUpgrade(player) {
+  const state = playerState[player];
+  if (state.ownedLevels.length < 5) {
+    state.ownedLevels.push(state.ownedLevels.length + 1);
+    state.currentLevelIndex = state.ownedLevels.length - 1;
+    gameAudio.upgrade(state.ownedLevels[state.currentLevelIndex]);
+  }
+}
+
+function processAnswer(player, chosenIndex) {
+  if (!questionState || !questionState.active) return;
+  gameAudio.answerTap();
+  const correctIndex = questionState.currentQuestion.answer;
+  const otherPlayer = player === 'top' ? 'bottom' : 'top';
+  if (!questionState.firstAnswer) {
+    questionState.firstAnswer = player;
+    if (chosenIndex === correctIndex) {
+      gameAudio.correct();
+      applyUpgrade(player);
+      hideQuestion();
+      return;
+    }
+    gameAudio.wrong();
+    questionState.secondChance = true;
+    questionTimer.textContent = '5';
+    clearInterval(questionCountdown);
+    questionCountdown = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((5000 - (Date.now() - questionState.firstAnswerTime)) / 1000));
+      questionTimer.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(questionCountdown);
+        endQuestion();
+      }
+    }, 100);
+    questionState.firstAnswerTime = Date.now();
+    return;
+  }
+  if (questionState.secondChance && player === otherPlayer) {
+    if (chosenIndex === correctIndex) {
+      gameAudio.correct();
+      applyUpgrade(player);
+    } else {
+      gameAudio.wrong();
+    }
+    hideQuestion();
+  }
+}
+
+function endQuestion() {
+  hideQuestion();
+}
+
+function refreshGameEnd() {
+  if (gameOver) return;
+  if (playerState.top.health <= 0 || playerState.bottom.health <= 0) {
+    gameOver = true;
+    gamePaused = true;
+    clearTimeout(nextQuestionTimer);
+    clearInterval(questionCountdown);
+    questionOverlay.classList.add('hidden');
+    endOverlay.classList.remove('hidden');
+    if (playerState.top.health <= 0 && playerState.bottom.health <= 0) {
+      gameAudio.draw();
+      endTitle.textContent = 'Draw!';
+      endText.textContent = 'Both players are out of health. The battle is tied!';
+    } else if (playerState.top.health <= 0) {
+      playerState.bottom.score += 1;
+      gameAudio.victory();
+      endTitle.textContent = 'Victory!';
+      endText.textContent = `${playerState.bottom.name} wins the snowy showdown!`;
+    } else {
+      playerState.top.score += 1;
+      gameAudio.victory();
+      endTitle.textContent = 'Victory!';
+      endText.textContent = `${playerState.top.name} wins the snowy showdown!`;
+    }
+    updatePlayerDisplays();
+  }
+}
+
+function switchSnowballType(player) {
+  const state = playerState[player];
+  const nextIndex = (state.currentLevelIndex + 1) % state.ownedLevels.length;
+  state.currentLevelIndex = nextIndex;
+  gameAudio.switchSnowball();
+  updatePlayerDisplays();
+}
+
+function throwSnowball(player) {
+  const state = playerState[player];
+  const level = state.ownedLevels[state.currentLevelIndex];
+  gameAudio.throwSnowball(level);
+  createSnowball(player, level);
+}
+
+function setTouchControlState(player, action, value) {
+  if (player === 'top') {
+    if (action === 'move-left') touchControlState.topLeft = value;
+    if (action === 'move-right') touchControlState.topRight = value;
+  } else {
+    if (action === 'move-left') touchControlState.bottomLeft = value;
+    if (action === 'move-right') touchControlState.bottomRight = value;
+  }
+}
+
+function handleTouchButtonEvent(event) {
+  gameAudio.unlock();
+  const button = event.currentTarget;
+  const action = button.dataset.action;
+  const player = button.dataset.player;
+  if (action === 'move-left' || action === 'move-right') {
+    if (event.type === 'pointerdown') {
+      setTouchControlState(player, action, true);
+    }
+    if (event.type === 'pointerup' || event.type === 'pointerleave' || event.type === 'pointercancel') {
+      setTouchControlState(player, action, false);
+    }
+    event.preventDefault();
+    return;
+  }
+  if (event.type === 'pointerdown') {
+    if (action === 'throw') throwSnowball(player);
+    if (action === 'switch') switchSnowballType(player);
+    event.preventDefault();
+  }
+}
+
+function toggleTouchControls() {
+  const leftPanel = document.getElementById('touchPanelLeft');
+  const rightPanel = document.getElementById('touchPanelRight');
+  const visible = leftPanel.classList.toggle('hidden');
+  rightPanel.classList.toggle('hidden', visible);
+  touchToggleButton.textContent = visible ? 'Show Touch Controls' : 'Hide Touch Controls';
+}
+
+function createAnswerButtons() {
+  const topContainer = document.getElementById('topAnswerButtons');
+  const bottomContainer = document.getElementById('bottomAnswerButtons');
+  topContainer.innerHTML = '';
+  bottomContainer.innerHTML = '';
+  ['A', 'B', 'C', 'D'].forEach((label, index) => {
+    const topButton = document.createElement('button');
+    topButton.className = 'answer-button';
+    topButton.textContent = label;
+    topButton.dataset.player = 'top';
+    topButton.dataset.answer = index;
+    topButton.addEventListener('click', () => processAnswer('top', index));
+    topContainer.appendChild(topButton);
+
+    const bottomButton = document.createElement('button');
+    bottomButton.className = 'answer-button';
+    bottomButton.textContent = label;
+    bottomButton.dataset.player = 'bottom';
+    bottomButton.dataset.answer = index;
+    bottomButton.addEventListener('click', () => processAnswer('bottom', index));
+    bottomContainer.appendChild(bottomButton);
+  });
+}
+
+function showNameMessage(message, isError = false) {
+  nameMessage.textContent = message;
+  nameMessage.style.color = isError ? '#d94d4d' : '#2d6b4c';
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.();
+  } else {
+    document.exitFullscreen?.();
+  }
+}
+
+function handleKeyDown(event) {
+  gameAudio.unlock();
+  if (event.key === 'Escape' && document.fullscreenElement) {
+    document.exitFullscreen?.();
+    return;
+  }
+  if (event.repeat) return;
+  const key = event.key;
+  pressedKeys.add(key);
+  if (gameOver) return;
+  if (!questionState || !questionState.active) {
+    if (key === 'ArrowUp') {
+      throwSnowball('bottom');
+      return;
+    }
+    if (key === 'ArrowDown') {
+      switchSnowballType('bottom');
+      return;
+    }
+    if (key === 'w' || key === 'W') {
+      switchSnowballType('top');
+      return;
+    }
+    if (key === 's' || key === 'S') {
+      throwSnowball('top');
+      return;
+    }
+  }
+  if (questionState && questionState.active) {
+    const topKeys = ['1', '2', '3', '4'];
+    const bottomKeys = ['7', '8', '9', '0'];
+    if (topKeys.includes(key)) processAnswer('top', topKeys.indexOf(key));
+    if (bottomKeys.includes(key)) processAnswer('bottom', bottomKeys.indexOf(key));
+  }
+}
+
+function handleKeyUp(event) {
+  pressedKeys.delete(event.key);
+}
+
+function startGame() {
+  gameAudio.unlock();
+  const topName = topNameInput.value.trim();
+  const bottomName = bottomNameInput.value.trim();
+  if (!topName || !bottomName) {
+    showNameMessage('Please enter both player names before starting.', true);
+    return;
+  }
+  setPlayerNames();
+  showNameMessage('Game started. Good luck!');
+  resetRound(false);
+  introOverlay.classList.add('hidden');
+  endOverlay.classList.add('hidden');
+  questionOverlay.classList.add('hidden');
+  gamePaused = false;
+  gameOver = false;
+  gameAudio.start();
+  setArenaBounds();
+  clearTimeout(nextQuestionTimer);
+  beginQuestions();
+  updatePlayerDisplays();
+  positionPlayers();
+}
+
+function backToStart() {
+  resetRound(true);
+  showNameMessage('');
+}
+
+startGameButton.addEventListener('click', startGame);
+playAgainButton.addEventListener('click', () => {
+  startGame();
+});
+backToStartButton.addEventListener('click', backToStart);
+fullscreenButton.addEventListener('click', toggleFullscreen);
+touchToggleButton.addEventListener('click', toggleTouchControls);
+document.addEventListener('fullscreenchange', () => {
+  fullscreenButton.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+});
+window.addEventListener('resize', () => {
+  setArenaBounds();
+  positionPlayers();
+});
+window.addEventListener('keydown', handleKeyDown);
+window.addEventListener('keyup', handleKeyUp);
+
+const touchButtons = document.querySelectorAll('.touch-control-button');
+touchButtons.forEach(button => {
+  button.addEventListener('pointerdown', handleTouchButtonEvent);
+  button.addEventListener('pointerup', handleTouchButtonEvent);
+  button.addEventListener('pointerleave', handleTouchButtonEvent);
+  button.addEventListener('pointercancel', handleTouchButtonEvent);
+});
+
+setArenaBounds();
+resetRound(true);
+updateFullscreenButton();
+requestAnimationFrame(gameLoop);
+
+function updateFullscreenButton() {
+  fullscreenButton.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+}
+
+</script>
+</body>
+</html>
