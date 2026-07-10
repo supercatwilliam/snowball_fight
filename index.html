@@ -1381,6 +1381,14 @@ function toggleFullscreen() {
 }
 
 function handleKeyDown(event) {
+
+  // Prevent iPad/browser page scrolling while the game is active.
+  // ArrowUp and ArrowDown should only control the bottom player.
+  if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') &&
+      introOverlay.classList.contains('hidden') && !gameOver) {
+    event.preventDefault();
+  }
+  
   gameAudio.unlock();
   if (event.key === 'Escape' && document.fullscreenElement) {
     document.exitFullscreen?.();
