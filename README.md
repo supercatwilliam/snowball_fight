@@ -1,8 +1,8 @@
-# ❄️ Snowball Showdown
+# ❄️ Snowball Fight
 
 Hi! 👋
 
-This is my game called **Snowball Showdown**.
+This is my game called **Snowball Fight**.
 
 In this game, two players have a snowball fight and answer science questions. If you get the answer right, your snowball become stronger! Bigger snowballs do more damage.
 
